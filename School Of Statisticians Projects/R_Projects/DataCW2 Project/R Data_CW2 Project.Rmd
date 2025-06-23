@@ -1,0 +1,493 @@
+```{r}
+
+```
+
+```{r}
+
+```
+
+---
+title: "Automobile Data"
+author: "Nancy Wangare"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Import Libraries
+
+```{r}
+pacman::p_load(
+  #data importation
+  tidyverse, readxl, tidylog, data.table, janitor, tidyr, dplyr,
+
+  #Data Analysis
+  skimr,summarytools,psych,Hmisc,
+
+  #machine learning
+
+  class, #KNN Classification
+  FNN, #KNN clusteriong and k nearest neighbour
+  caret, #general machine learning framework
+  cluster, #clustering algorithms
+  factoextra, #visualising clusturing
+  NbClust,
+  tidyr, dplyr,
+  e1071,
+
+  #Data Visualisation
+  ggpubr, plotly, RcolorBrewer, corplot, GGally
+)
+```
+
+###### 
+
+## Load Dataset
+
+```{r}
+df <- read_excel("C:/Users/Nancy/Documents/Mysql project/Data_CW2.xlsx")
+
+```
+
+```{r}
+cor_data<- df[c(-1,-2)]
+correlation <- cor(cor_data)
+correlation
+cor.plot(correlation,numbers = TRUE)
+dfSummary(df)
+```
+
+```{r}
+
+```
+
+`{(is.na(df))}`
+
+## Inspecting Data
+
+```{r}
+skim(df)
+```
+
+```{r}
+df
+```
+
+```{r}
+head(df)
+sum(is.na(df))
+summary(df)
+```
+
+```{r}
+
+```
+
+## Data Visualization
+
+```{r}
+#Histograms
+pairs.panels(df)
+```
+
+```{r}
+df %>%
+  ggplot(aes(x = `Model age`, y = `number of dealerships nearby` )) +
+  ggtitle("Age vs Dealerships") +
+  xlab("Model age") +
+  ylab("number of dealerships nearby") +
+  geom_col()
+
+
+```
+
+```{r}
+# It is a model age vs vehicle sales price
+ df %>%
+  ggplot(aes(x = `Model age`, y =`vechicle sale price`)) +
+  ggtitle("Age vs vechicle sale price") +
+  xlab("Model age") +
+  ylab("vechicle sale price") +
+  geom_point()
+
+
+```
+
+```{r}
+
+# It is a model proximity to urban centres vs vechicle sale price
+df %>%
+  ggplot(aes(x = `proximity to urban centres`, y = `vechicle sale price`)) +
+  ggtitle("Proximity to urban centres vs vechicle sale price") +
+  xlab("proximity to urban centres") +
+  ylab("vechicle sale price") +
+  geom_point()
+```
+
+```         
+```
+
+```{r}
+iris %>%
+  ggplot(aes(x = Sepal.Length, y = Sepal.Width, color = Species))+
+  geom_point()
+```
+
+```         
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+?geom_histogram
+# Histogam
+df %>%
+  ggplot(aes(x = `vechicle sale price`)) +
+  geom_histogram(color = "black", fill = "blue", binwidth = 10)
+
+```
+
+```{r}
+# Line Plot
+df %>%
+  ggplot(aes(x = `sale date`, y = `vechicle sale price`)) +
+  geom_line()
+
+
+df
+```
+
+```{r}
+#This is a column plot
+df %>%
+  ggplot(aes(x = `vechicle sale price`, y = `number of dealerships nearby`)) +
+  geom_col()
+
+
+```
+
+```{r}
+iris %>%
+  ggplot(aes(x = Sepal.Length, fill = Species )) +
+  geom_bar(position = "dodge")
+?geom_bar
+
+```
+
+### Question 1.1 (a) Build a linear regression model to predict vehicle value. (b) Interpret
+
+your regression results for your customer.
+
+#### Linear Regression
+
+```{r}
+df_model<-lm(`vechicle sale price`~ `Model age` + `proximity to urban centres` + `number of dealerships nearby`,data = df) 
+summary(df_model)
+```
+
+#### Non-linear Model
+
+```{r}
+model_poly <- lm ( `vechicle sale price` ~ poly(`Model age`, 2) +  `proximity to urban centres` + `number of dealerships nearby`, data = df) 
+summary(model_poly)
+```
+
+### Question 1.2 Your group manager questions whether the model may suffer from
+
+potential heteroskedasticity and multicollinearity issues, but you do not agree. (a) please briefly explain the concepts of heteroskedasticity and multicollinearity;
+
+#### 
+
+-   **Heteroskedasticity:** This refers to the situation in regression analysis where the variance of the errors (or residuals) is not constant across all levels of the independent variables. In simpler terms, the spread of the residuals changes as the predicted value changes. This violates an assumption of ordinary least squares (OLS) regression and can lead to incorrect standard errors and p-values, making hypothesis tests unreliable.
+
+-   **Multicollinearity:** This occurs when two or more independent variables in a regression model are highly correlated with each other. High multicollinearity makes it difficult for the model to distinguish the individual effect of each correlated variable on the dependent variable. This can lead to unstable coefficient estimates, large standard errors, and difficulty in interpreting the significance of individual predictors
+
+### 
+
+### (b)show evidence on why your results in Question 1 do not suffer from such issues;
+
+```{r}
+# Residuals vs. Fitted plot
+    plot(df_model, which = 1)
+```
+
+```{r}
+# Breusch-Pagan test (using the 'lmtest' package, you might need to install it)
+    install.packages("lmtest")
+  
+```
+
+```{r}
+  
+
+```
+
+```{r}
+#Test for Multicollinearity
+# Assuming your data frame used for the model is named 'your_data'
+    # And your independent variables are in a subset of this data frame
+    # Let's assume independent variables are in columns 2 to the second-to-last column
+    independent_vars <- df[, 2:(ncol(df) - 1)]
+
+    # Correlation matrix
+    cor(independent_vars)
+
+    # VIF (using the 'car' package, you might need to install it)
+    install.packages("car")
+    library(car)
+    vif(df_model)
+```
+
+### (c) what are possible methods to address the issues of heteroskedasticity and
+
+multicollinearity?
+
+-   **Addressing Heteroskedasticity:**
+
+    -   **Robust Standard Errors:** You can calculate robust standard errors that are less affected by heteroskedasticity. The `sandwich` package in R can be used for this.
+
+    -   **Weighted Least Squares (WLS):** If you can identify the pattern of heteroskedasticity, you can use WLS, where observations with larger variances are given less weight in the regression.
+
+    -   **Transformations:** Transforming the dependent variable (e.g., log transformation) can sometimes stabilize the variance.
+
+-   **Addressing Multicollinearity:**
+
+    -   **Remove Correlated Variables:** If two predictors are highly correlated, you can consider removing one of them, especially if one is theoretically less important.
+
+    -   **Combine Variables:** If correlated variables are measuring a similar construct, you can create an index or composite variable.
+
+    -   **Principal Component Analysis (PCA):** You can use PCA to create a smaller set of uncorrelated components that capture most of the variance in the original predictors. These components can then be used in the regression.
+
+    -   **Regularization Techniques:** Ridge regression and lasso regression are techniques that can handle multicollinearity by adding a penalty term to the loss function. Libraries like `glmnet` in R can be used for this.
+
+### 
+
+### You are building an algorithm to determine varieties of iris (versicolor or virginica). You have collected data for a sample of iris. The data include sepal length, sepal width, petal length, petal width, and the variety of the flower. The data are available in the Excel file attached. The data for Task 2 is presented on the sheet ‘Iris’ of the excel file ‘Data_CW2.xlsx’
+
+### Question 2.1 Use a Kth-Nearest Neighbour model and the Euclidean distance algorithm to determine the variety of the following observation (6.6, 3.2, 5.1, 1.5). Use relevant theories of the model to justify your choice. (10 marks)
+
+`{'}`
+
+```{r}
+iris_data <- read_excel("C:/Users/Nancy/Documents/Mysql project/Data_CW2.xlsx", sheet = "Iris")
+```
+
+```{r}
+iris_data
+
+```
+
+```{r}
+# Splitting the string into separate columns
+iris_data <- iris_data %>%
+  separate(Column1, into = c("sepal_length", "sepal_width", "petal_length", "petal_width", "species"), sep = ",") %>% 
+  mutate(across(sepal_length:petal_width, as.numeric))
+```
+
+```{r}
+
+ 
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+iris_data
+```
+
+```{r}
+# Convert species to a factor
+iris_data$species <- as.factor(iris_data$species)
+```
+
+```{r}
+# Define new observation
+new_obs <- data.frame(sepal_length = 6.6, sepal_width = 3.2, 
+                      petal_length = 5.1, petal_width = 1.5)
+```
+
+```{r}
+
+```
+
+```{r}
+# Prepare the data for KNN
+# Select the features (sepal length, sepal width, petal length, petal width)
+iris_features <- iris_data %>%
+  select(-species)
+
+# Create the training labels
+iris_labels <- iris_data$species
+
+# Define the new observation
+new_observation <- data.frame(
+  `Sepal Length` = 6.6,
+  `Sepal Width` = 3.2,
+  `Petal Length` = 5.1,
+  `Petal Width` = 1.5
+)
+
+# Ensure column names match (handle potential spaces in column names)
+colnames(new_observation) <- colnames(iris_features)
+
+# Apply KNN with an example k value (e.g., k=3 for demonstration)
+# You can choose any initial k to demonstrate the process
+set.seed(123) # Set a seed for reproducibility
+knn_prediction_q21 <- knn(train = iris_features, test = new_observation, cl = iris_labels, k = 3)
+
+# Print the prediction for the new observation
+print(knn_prediction_q21)
+
+
+```
+
+### 
+
+The Euclidean distance is a common and effective metric for KNN, especially when the features are continuous and on similar scales. It measures the straight-line distance between two points in multi-dimensional space. This is suitable for your iris data because the measurements (sepal/petal length/width) are continuous numerical values.
+
+```{r}
+ggplot(iris_data, aes(x = petal_length, y = petal_width, color = species)) +
+  geom_point() +
+  geom_point(aes(x = 5.1, y = 1.5), color = "red", shape = 17, size = 4) +
+  labs(title = "K-NN Classification of New Observation") +
+  theme_minimal()
+```
+
+## Question 2.2 When we use the K-NN model to classify an unseen instance,
+
+## a) what might be the problem if we set the value of K to an even number? Please provide the evidence combining the results from Question 2.1.
+
+## b) What could be a possible
+
+solution? (6 marks)
+
+```{r}
+# Train the model with K = 6
+prediction_k6 <- knn(train = iris_data[, 1:4], test = new_obs, cl = iris_data$species, k = 6)
+
+print(prediction_k6)
+```
+
+### a) **Problem with even K:**
+
+-   When `k` is an even number, you can have a tie in the number of neighbors belonging to different classes. In a binary classification problem (like versicolor vs. virginica), if you have an even `k` and an equal number of neighbors from each class, the KNN algorithm won't have a clear majority to determine the class of the new instance. This can lead to ambiguous or arbitrary classifications depending on how the algorithm handles ties.
+
+b)  **Possible solution:**
+
+-   The simplest solution is to use an odd value for `k`. With an odd `k`, you guarantee that there will always be a majority class among the `k` nearest neighbors, preventing ties.
+
+**Evidence from Question 2.1:**
+
+-   If you used an even `k` in Question 2.1 and the new observation happened to have an equal number of 'versicolor' and 'virginica' neighbors, you wouldn't get a definitive prediction. However, based on the provided values (6.6, 3.2, 5.1, 1.5), the new observation is likely closer to the 'virginica' variety based on typical iris data. If your result from Q2.1 with an even k gives a clear prediction, you can explain that while it worked in this specific instance, the *potential* for ties exists with even k values in other scenarios. If you got an ambiguous result with an even k, that would be direct evidence.
+
+## Question 2.3 Apply 5-NN, 7-NN, and 9-NN models, a) show the confusion matrix, and
+
+b)  calculate the accuracy of these models. c) Which model do you think is the best? Please explain your choice. (16 marks)
+
+```{r}
+# Split into training and testing sets
+set.seed(123)
+train_index <- sample(1:nrow(iris_data), 0.7 * nrow(iris_data))
+train_data <- iris_data[train_index, ]
+test_data <- iris_data[-train_index, ]
+
+# Define a Function to Compute Confusion Matrix
+compute_knn_confusion <- function(k_value) {
+  # Apply K-NN
+  knn_pred <- knn(train = train_data[, 1:4], test = test_data[, 1:4], 
+                   cl = train_data$species, k = k_value)
+  
+  # Generate confusion matrix
+  confusion_matrix <- table(Predicted = knn_pred, Actual = test_data$species)
+  
+  print(paste("Confusion Matrix for K =", k_value))
+  print(confusion_matrix)
+}
+
+# Compute Confusion Matrices for K = 5, 7, and 9
+compute_knn_confusion(5)
+```
+
+```{r}
+pacman::p_load( caret )
+```
+
+```{r}
+# Split the data into training and testing sets
+set.seed(123) # Set a seed for reproducibility
+train_index <- createDataPartition(iris_labels, p = 0.8, list = FALSE)
+iris_train_features <- iris_features[train_index, ]
+iris_test_features <- iris_features[-train_index, ]
+iris_train_labels <- iris_labels[train_index]
+iris_test_labels <- iris_labels[-train_index]
+
+# Train and evaluate 5-NN, 7-NN, and 9-NN models
+
+# 5-NN
+set.seed(123)
+knn_prediction_5nn <- knn(train = iris_train_features, test = iris_test_features, cl = iris_train_labels, k = 5)
+confusion_matrix_5nn <- confusionMatrix(knn_prediction_5nn, iris_test_labels)
+
+# 7-NN
+set.seed(123)
+knn_prediction_7nn <- knn(train = iris_train_features, test = iris_test_features, cl = iris_train_labels, k = 7)
+confusion_matrix_7nn <- confusionMatrix(knn_prediction_7nn, iris_test_labels)
+
+# 9-NN
+set.seed(123)
+knn_prediction_9nn <- knn(train = iris_train_features, test = iris_test_features, cl = iris_train_labels, k = 9)
+confusion_matrix_9nn <- confusionMatrix(knn_prediction_9nn, iris_test_labels)
+
+# Print the confusion matrices
+print("Confusion Matrix for 5-NN:")
+print(confusion_matrix_5nn)
+
+print("Confusion Matrix for 7-NN:")
+print(confusion_matrix_7nn)
+
+print("Confusion Matrix for 9-NN:")
+print(confusion_matrix_9nn)
+
+# Extract and print the accuracies
+accuracy_5nn <- confusion_matrix_5nn$overall['Accuracy']
+accuracy_7nn <- confusion_matrix_7nn$overall['Accuracy']
+accuracy_9nn <- confusion_matrix_9nn$overall['Accuracy']
+
+print(paste("Accuracy for 5-NN:", round(accuracy_5nn, 4)))
+print(paste("Accuracy for 7-NN:", round(accuracy_7nn, 4)))
+print(paste("Accuracy for 9-NN:", round(accuracy_9nn, 4)))
+
+
+```
+
+**K = 9** appears to be the best model because it achieved the **highest accuracy (87.5%)**, compared to **K = 5 and K = 7 (both 84.375%)**.
+
+### This is because of;
+
+1.  **Higher Accuracy**
+
+    -   Accuracy is an essential metric for classification models, and K = 9 outperformed the other two models.
+
+2.  **Better Generalization**
+
+    -   A higher K generally reduces noise by relying on a broader set of observations for classification.
+
+    -   It ensures predictions are less dependent on individual data points, reducing overfitting.

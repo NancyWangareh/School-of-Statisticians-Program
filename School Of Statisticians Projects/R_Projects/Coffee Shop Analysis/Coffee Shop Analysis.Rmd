@@ -1,0 +1,229 @@
+---
+title: "Coffee Shop Project"
+author: "Nancy Wangare"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+Sys.which("make")
+```
+
+```{r}
+options(repos=c(CRAN="https://cloud.r-project.org"))
+```
+
+## Packages
+
+```{r}
+pacman::p_load(
+  tidyverse, tidylog, janitor, readxl, magrittr, skimr, ggplot2
+)
+```
+
+## Load Data
+
+```{r}
+df <- read_excel("C:/Users/Nancy/Documents/Mysql project/coffee_shop_survey.xlsx")
+
+```
+
+```{r}
+
+df_clean <- df %>%
+  clean_names()
+
+names(df_clean)
+```
+
+```{r}
+skim(df_clean)
+```
+
+# Descriptive Analysis Questions
+
+## 1.The average age of customers visiting the coffee shop
+
+## 
+
+```{r}
+mean(df_clean$age)
+```
+
+## 2.Gender distribution among respondents
+
+```{r}
+gender_distribution <- df_clean  %>% 
+  count(gender, name="count") 
+
+  gender_distribution
+```
+
+```{r}
+ggplot(gender_distribution, aes(x= gender, y=count,fill= gender))+
+   geom_col()+
+   labs(
+     title= "Gender Distribution of Customers",
+     y= "Total number of customers",
+     x= "Gender of customers"
+   )+
+   theme_minimal()
+```
+
+## 3.The most and least popular products
+
+```{r}
+library(dplyr)
+```
+
+```{r}
+product_popularity <- df_clean %>% 
+  count(favorite_product, name =  "count") %>% 
+  arrange(desc(count))
+```
+
+# Relationship & Comparison Questions
+
+## 1. Does visit frequency differ by gender or age group
+
+```{r}
+aggregate(visit_frequency ~ gender, df_clean, FUN=mean)
+```
+
+```{r}
+# Test for statistical significance:
+kruskal.test(visit_frequency ~ gender, df_clean)
+```
+
+```{r}
+# Creating Age Groups
+df_clean$age_group <- cut(df_clean$age, breaks=c(0, 25, 40, 60, 100), labels=c("Young", "Middle-Aged", "Older", "Senior"))
+
+```
+
+```{r}
+# Comparing visit frequency across age groups
+aggregate(visit_frequency ~ age_group, df_clean, FUN=mean)
+```
+
+## 2.Is there a relationship between visit frequency and satisfaction score
+
+##### Correlation
+
+```{r}
+cor(df_clean$visit_frequency, df_clean$satisfaction_score)
+```
+
+```{r}
+ggplot(df_clean, aes(x = visit_frequency, y = satisfaction_score)) +
+  geom_point() + 
+  geom_smooth(method="lm", se=FALSE) + 
+  theme_minimal() +
+  labs(title="Visit Frequency vs Satisfaction Score",
+       x="Visit Frequency", y="Satisfaction Score")
+```
+
+## 3.Do loyalty members spend more time at the coffee shop than non-members
+
+```{r}
+df_clean %>% 
+  group_by(loyalty_member) %>% 
+  summarise(avg_time_spent = mean(time_spent_min)) %>% 
+  ggplot(aes(x=loyalty_member, y= avg_time_spent, fill = loyalty_member)) + 
+  geom_col() +
+  geom_text(aes(label = avg_time_spent, vjust = -0.5)) +
+  theme_minimal()
+```
+
+##### Perform a t-test
+
+```{r}
+t.test(time_spent_min ~ loyalty_member, data = df_clean)
+```
+
+## 4.Are customers who would recommend the coffee shop more likely to be loyal members?
+
+```{r}
+chi_square_data <- table(df_clean$would_recommend, df_clean$loyalty_member)
+
+print(chi_square_data)
+```
+
+```{r}
+# Perform chi-square test
+chisq.test(chi_square_data)
+```
+
+## Insightful/Advanced Questions
+
+## 1.What factors (age, loyalty status, product preference) are associated with higher satisfaction scores
+
+```{r}
+df_model <- df_clean %>%
+  select(age, loyalty_member, favorite_product, satisfaction_score) %>%
+  mutate(
+    loyalty_member = factor(loyalty_member),
+    favorite_product = factor(favorite_product)
+  )
+```
+
+```{r}
+model <- lm(satisfaction_score ~ age + loyalty_member + favorite_product, data = df_model)
+summary(model)
+```
+
+```{r}
+library(broom)
+```
+
+```{r}
+tidy(model) %>% 
+  ggplot(aes(x = term, y = estimate, fill = p.value < 0.05)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Impact of Factors on Satisfaction Score",
+       y = "Effect Size", x = "")
+```
+
+## 2.Do loyalty members spend more time at the coffee shop than non-members
+
+```{r}
+coffee_pastries <- df_clean %>% 
+  filter(favorite_product %in% c('Coffee', 'Pastry')) %>% 
+  group_by(favorite_product) %>% 
+  summarise(average_satisfaction = mean(satisfaction_score)) %>% 
+  ggplot(aes(x = favorite_product, y = average_satisfaction, fill = favorite_product)) +
+  geom_col() +
+  theme_minimal()
+```
+
+```{r}
+print(coffee_pastries)
+```
+
+## 3.Are customers who would recommend the coffee shop more likely to be loyal members
+
+```         
+```
+
+```{r}
+df_model <- df_clean %>%   
+  select(would_recommend, gender, satisfaction_score, age, loyalty_member,           visit_frequency) %>%   
+  mutate(     recommend = ifelse(would_recommend == "Yes", 1, 0),         loyalty_member = as.factor(loyalty_member),gender = as.factor(gender)   ) %>%   drop_na()
+```
+
+##### Logistics Regression
+
+```{r}
+log_model <- glm(recommend ~ satisfaction_score + age + loyalty_member + visit_frequency + gender, data = df_model, family = "binomial")
+
+summary(log_model)
+```
+
+```{r}
+
+```
